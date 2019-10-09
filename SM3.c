@@ -166,7 +166,7 @@ void SM3Hash(unsigned char* msgText, int notBigendian, unsigned char sm3HashChr3
 	}
 }
 
-void SM3hmac(unsigned char msgText[], unsigned int keyInt16[], int notBigendian, unsigned char sm3HashChr32[])
+void SM3hmac(unsigned char msgText[], unsigned int keyInt16[], int notBigendian, unsigned char sm3hmacChr32[])
 {
 	// 因为默认使用自己随机出来的key，随机的时候规定生成的key就是64Byte，就不需要填充key至64Byte
 	unsigned int tempInt16[32]; // ipad opad一起算了，tempInt前16个元素存储和ipad异或结果，后16个元素存储opad异或结果
@@ -189,13 +189,13 @@ void SM3hmac(unsigned char msgText[], unsigned int keyInt16[], int notBigendian,
 	// 这让我想到另一个问题，如果key里面有全零字符就会出现问题，比如key有一段为 0x61 62 00 63
 	// 他算长度只算到62这个字符结束，后续实际在key里面的字符，会因为00的出现而被阻断
 	//unsigned char sm3HashChr32[32];
-	SM3Hash(jointChr, notBigendian, sm3HashChr32);
+	SM3Hash(jointChr, notBigendian, sm3hmacChr32);
 	//free(jointChr);// 释放内存
 	jointChr = (unsigned char*)malloc((64 + 32) * sizeof(unsigned char)); // 第二次hash前的拼接长度
 	memcpy(jointChr, keyChr64 + 64, 64);
-	memcpy(jointChr + 64, sm3HashChr32, 32);
+	memcpy(jointChr + 64, sm3hmacChr32, 32);
 	memset(jointChr + 64 + 32, 0, 1);
-	SM3Hash(jointChr, notBigendian, sm3HashChr32);
+	SM3Hash(jointChr, notBigendian, sm3hmacChr32);
 
 }
 
