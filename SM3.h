@@ -33,9 +33,9 @@ typedef struct _ExtendMsgInt {
 // 初始向量
 extern const unsigned int IV[8];
 
-extern const unsigned int ipad[16];
+//extern const unsigned int ipad[16];
 
-extern const unsigned int opad[16];
+//extern const unsigned int opad[16];
 
 /*
  * 宏函数NOT_BIG_ENDIAN()
