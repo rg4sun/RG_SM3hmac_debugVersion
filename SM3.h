@@ -103,6 +103,6 @@ void CF(unsigned int Vi[], unsigned int msgInt16[], unsigned int W[], unsigned i
 
 void SM3Hash(unsigned char* msgText, int notBigendian, unsigned char sm3HashChr32[]);
 
-void SM3hmac(unsigned char msgText[], unsigned int key[], int notBigendian);
+void SM3hmac(unsigned char msgText[], unsigned int key[], int notBigendian, unsigned char sm3HashChr32[]);
 
 void SM3Interface();
