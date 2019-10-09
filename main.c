@@ -3,6 +3,8 @@
 #include<string.h>
 #include"SM3.h"
 
+#pragma warning(disable : 4996)// 用于微软VS标准
+
 // SM3所有操作已完成，以下为测试函数了
 // 填充和扩展的输出测试
 void Fill_N_extend_test(unsigned char chr[])
@@ -86,6 +88,29 @@ void Eg2_test() {
 
 int main()
 {
-	Eg1_test();
+	//Eg1_test();
+	int bigendFlag = NOT_BIG_ENDIAN();
+
+	char* str = "abcd";
+	/*unsigned int key[16] = {
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364
+	};*/
+
+	unsigned int key[16] = {
+		0x23242526, 0x61626364, 0x12131415, 0x41424364,
+		0x23242526, 0x61626364, 0x12131415, 0x41424364,
+		0x23242526, 0x61626364, 0x12131415, 0x41424364,
+		0x23242526, 0x61626364, 0x12131415, 0x41424364
+	};
+	SM3hmac(str,key,bigendFlag);
+
+	char s[20] = { 0x61,0x62,0x63,0x00,0x00,'s','e' };
+
+	printf("%d\n", strlen(s));
+	printf("%s\n", s);
+
 	return 0;
 }

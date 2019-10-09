@@ -10,11 +10,32 @@ typedef struct _ExtendMsgInt {
 	unsigned int W1[64];
 }ExtendMsgInt;
 
+//// 初始向量
+//const unsigned int IV[8] = {
+//	0x7380166F,0x4914B2B9,0x172442D7,0xDA8A0600,
+//	0xA96F30BC,0x163138AA,0xE38DEE4D,0xB0FB0E4E
+//};
+//
+//const unsigned int ipad[16] = {
+//	0x36363636, 0x36363636, 0x36363636, 0x36363636,
+//	0x36363636, 0x36363636, 0x36363636, 0x36363636,
+//	0x36363636,	0x36363636, 0x36363636, 0x36363636,
+//	0x36363636, 0x36363636, 0x36363636, 0x36363636
+//};
+//
+//const unsigned int opad[16] = {
+//	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+//	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+//	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+//	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c
+//};
+
 // 初始向量
-const unsigned int IV[8] = {
-	0x7380166F,0x4914B2B9,0x172442D7,0xDA8A0600,
-	0xA96F30BC,0x163138AA,0xE38DEE4D,0xB0FB0E4E
-};
+extern const unsigned int IV[8];
+
+extern const unsigned int ipad[16];
+
+extern const unsigned int opad[16];
 
 /*
  * 宏函数NOT_BIG_ENDIAN()
@@ -81,5 +102,7 @@ ExtendMsgInt MsgExtend(unsigned int msgInt16[]);
 void CF(unsigned int Vi[], unsigned int msgInt16[], unsigned int W[], unsigned int W1[]);
 
 void SM3Hash(unsigned char* msgText, int notBigendian, unsigned char sm3HashChr32[]);
+
+void SM3hmac(unsigned char msgText[], unsigned int key[], int notBigendian);
 
 void SM3Interface();

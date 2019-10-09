@@ -1,5 +1,25 @@
 #include "SM3.h"
 
+// 初始向量
+const unsigned int IV[8] = {
+	0x7380166F,0x4914B2B9,0x172442D7,0xDA8A0600,
+	0xA96F30BC,0x163138AA,0xE38DEE4D,0xB0FB0E4E
+};
+
+const unsigned int ipad[16] = {
+	0x36363636, 0x36363636, 0x36363636, 0x36363636,
+	0x36363636, 0x36363636, 0x36363636, 0x36363636,
+	0x36363636,	0x36363636, 0x36363636, 0x36363636,
+	0x36363636, 0x36363636, 0x36363636, 0x36363636
+};
+
+const unsigned int opad[16] = {
+	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c
+};
+
 MsgInt MsgFill512(unsigned char* msg, int notBigendian)
 {
 	// int msgLength = sizeof(*msg) * 8; 指针数组长度不能用sizeof算
@@ -144,6 +164,38 @@ void SM3Hash(unsigned char* msgText, int notBigendian, unsigned char sm3HashChr3
 	for (int i = 0; i < 8; i++) {
 		UINT_2_UCHAR(V[i], sm3HashChr32, 4 * i, notBigendian);
 	}
+}
+
+void SM3hmac(unsigned char msgText[], unsigned int keyInt16[], int notBigendian)
+{
+	// 因为默认使用自己随机出来的key，随机的时候规定生成的key就是64Byte，就不需要填充key至64Byte
+	unsigned int tempInt16[32]; // ipad opad一起算了，tempInt前16个元素存储和ipad异或结果，后16个元素存储opad异或结果
+	for (int i = 0; i < 16; i++) {
+		tempInt16[i] = keyInt16[i] ^ 0x36363636;//ipad[i];
+		tempInt16[i + 16] = keyInt16[i] ^ 0x5c5c5c5c;// opad[i];
+	}
+	unsigned char keyChr64[128]; // 前64存储ipad异或结果(int)转成char，后64存储opad
+	for (int i = 0; i < 16; i++) {
+		UINT_2_UCHAR(tempInt16[i], keyChr64, 4 * i, notBigendian);
+		UINT_2_UCHAR(tempInt16[i + 16], keyChr64, 4 * (i + 16), notBigendian);
+		// 不是很懂为啥这里 第二个参数不用 keyChr64 + 64，照理来说，应该要是 &keyChr64[64] 不就是 keyChr64 + 64么
+	}
+	unsigned char* jointChr = (unsigned char*)malloc((strlen(msgText) + 64) * sizeof(unsigned char));// 第一次hash前的拼接长度
+	memcpy(jointChr, keyChr64, 64);
+	memcpy(jointChr + 64, msgText, strlen(msgText));
+	//memcpy(jointChr + strlen(msgText), 0, 1); 这个不能放常量0，要放指针进去
+	memset(jointChr + 64 + strlen(msgText), 0, 1);
+	// 一定要在末尾添上\0标志字符串结尾，否则后续调用msgFill512时候读取msgLength会有错误，
+	// 这让我想到另一个问题，如果key里面有全零字符就会出现问题，比如key有一段为 0x61 62 00 63
+	// 他算长度只算到62这个字符结束，后续实际在key里面的字符，会因为00的出现而被阻断
+	unsigned char sm3HashChr32[32];
+	SM3Hash(jointChr, notBigendian, sm3HashChr32);
+	//free(jointChr);// 释放内存
+	jointChr = (unsigned char*)malloc((64 + 32) * sizeof(unsigned char)); // 第二次hash前的拼接长度
+	memcpy(jointChr, keyChr64 + 64, 64);
+	memcpy(jointChr + 64, sm3HashChr32, 32);
+	memset(jointChr + 64 + 32, 0, 1);
+	SM3Hash(jointChr, notBigendian, sm3HashChr32);
 }
 
 void SM3Interface()
