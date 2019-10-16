@@ -105,4 +105,6 @@ void SM3Hash(unsigned char* msgText, int notBigendian, unsigned char sm3HashChr3
 
 void SM3hmac(unsigned char msgText[], unsigned int key[], int notBigendian, unsigned char sm3HashChr32[]);
 
+void Key16Generate(unsigned int keyInt16[], int notbigendian);
+
 void SM3Interface();

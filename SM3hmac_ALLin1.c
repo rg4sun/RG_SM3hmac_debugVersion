@@ -1,4 +1,102 @@
-#include "SM3.h"
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<time.h>
+
+typedef struct _MsgInt {
+	unsigned int* msgInt;//原始消息字符转化为int指针数组，每4个字符转化为一个int个数
+	int intCount;//int数个数
+}MsgInt;
+
+typedef struct _ExtendMsgInt {
+	unsigned int W[68];
+	unsigned int W1[64];
+}ExtendMsgInt;
+
+//// 初始向量
+//const unsigned int IV[8] = {
+//	0x7380166F,0x4914B2B9,0x172442D7,0xDA8A0600,
+//	0xA96F30BC,0x163138AA,0xE38DEE4D,0xB0FB0E4E
+//};
+//
+//const unsigned int ipad[16] = {
+//	0x36363636, 0x36363636, 0x36363636, 0x36363636,
+//	0x36363636, 0x36363636, 0x36363636, 0x36363636,
+//	0x36363636,	0x36363636, 0x36363636, 0x36363636,
+//	0x36363636, 0x36363636, 0x36363636, 0x36363636
+//};
+//
+//const unsigned int opad[16] = {
+//	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+//	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+//	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c,
+//	0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c, 0x5c5c5c5c
+//};
+
+// 初始向量
+//extern const unsigned int IV[8];
+
+//extern const unsigned int ipad[16];
+
+//extern const unsigned int opad[16];
+
+/*
+ * 宏函数NOT_BIG_ENDIAN()
+ * 用于测试运行环境是否为大端，小端返回true
+ */
+static const int endianTestNum = 1;
+#define NOT_BIG_ENDIAN() ( *(char *)&endianTestNum == 1 )
+
+#define FF_LOW(x,y,z) ( (x) ^ (y) ^ (z))
+#define FF_HIGH(x,y,z) (((x) & (y)) | ( (x) & (z)) | ( (y) & (z)))
+
+#define GG_LOW(x,y,z) ( (x) ^ (y) ^ (z))
+#define GG_HIGH(x,y,z) (((x) & (y)) | ( (~(x)) & (z)) )
+
+//#define ROTATE_LEFT(uint32,shift) ( (uint32) = ( ( (uint32) << (shift) ) | ( (uint32) >> (32 - (shift)) ) ) )
+// 上面写的会改变传入的参数的值，影响MsgExtend函数里W 的运算
+#define ROTATE_LEFT(uint32,shift) ( ( ( (uint32) << (shift) ) | ( (uint32) >> (32 - (shift)) ) ) )
+
+#define P0(x) ((x) ^  ROTATE_LEFT((x),9) ^ ROTATE_LEFT((x),17))
+#define P1(x) ((x) ^  ROTATE_LEFT((x),15) ^ ROTATE_LEFT((x),23))
+
+/*
+ * 宏函数UCHAR_2_UINT(uchr8,uint32,i,notBigendian)
+ * uchr8        -- unsigned char - 8bit
+ * uint32       -- unsigned int  - 32bit
+ * i            -- int
+ * notBigendian -- int/bool
+ * 将uchr8接收的字符数组,转换成大端表示的uint32（从底层看二进制按左高位右地位排列）
+ * NOT_BIG_ENDIAN()检验环境，非大端时notBigendian为真，启用此宏函数
+ */
+#define UCHAR_2_UINT(uchr8,uint32,i,notBigendian)				\
+{																\
+	if(notBigendian){                                           \
+		(uint32) = ((unsigned int) (uchr8)[(i)    ] << 24 )		\
+				 | ((unsigned int) (uchr8)[(i) + 1] << 16 )		\
+				 | ((unsigned int) (uchr8)[(i) + 2] << 8  )		\
+				 | ((unsigned int) (uchr8)[(i) + 3]       );	\
+	}															\
+}
+
+ /*
+  * 宏函数UINT_2_UCHAR(uint32,uchr8,i,notBigendian)
+  * uchr8        -- unsigned char - 8bit
+  * uint32       -- unsigned int  - 32bit
+  * i            -- int
+  * notBigendian -- int/bool
+  * 将大端表示的uint32,转换成uchr8的字符数组
+  * NOT_BIG_ENDIAN()检验环境，非大端时notBigendian为真，启用此宏函数
+  */
+#define UINT_2_UCHAR(uint32,uchr8,i,notBigendian)				\
+{																\
+	if(notBigendian){                                           \
+		(uchr8)[(i)    ] = (unsigned char)((uint32) >> 24);		\
+		(uchr8)[(i) + 1] = (unsigned char)((uint32) >> 16);		\
+		(uchr8)[(i) + 2] = (unsigned char)((uint32) >> 8 );		\
+		(uchr8)[(i) + 3] = (unsigned char)((uint32)      );		\
+	}															\
+}
 
 // 初始向量
 const unsigned int IV[8] = {
@@ -201,7 +299,7 @@ void SM3hmac(unsigned char msgText[], unsigned int keyInt16[], int notBigendian,
 
 }
 
-void Key16Generate(unsigned int keyInt16[],int notbigendian)
+void Key16Generate(unsigned int keyInt16[], int notbigendian)
 {
 	//两次运行的结果相同，是因为未利用srand()设置随机数种子，所以rand()在调用时会自动设随机数种子为1
 	srand((unsigned int)time(0));
@@ -216,7 +314,7 @@ void Key16Generate(unsigned int keyInt16[],int notbigendian)
 		}
 	}
 	for (int i = 0; i < 16; i++) {
-		UCHAR_2_UINT(keyChr64, keyInt16[i], 4*i, notbigendian);
+		UCHAR_2_UINT(keyChr64, keyInt16[i], 4 * i, notbigendian);
 	}
 
 }
@@ -226,3 +324,145 @@ void SM3Interface()
 
 }
 
+// SM3所有操作已完成，以下为测试函数了
+// 填充和扩展的输出测试
+void Fill_N_extend_test(unsigned char chr[])
+{
+	int bigendFlag = NOT_BIG_ENDIAN();
+
+	//unsigned char* chr = "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd";
+
+	MsgInt filledMsgInt = MsgFill512(chr, bigendFlag);
+	//unsigned char ch[] = *chr; 
+	int groupAmount = filledMsgInt.intCount / 16;
+
+	//消息填充输出测试
+	puts("------- 消息填充输出测试 -------\n");
+	for (int i = 0; i < filledMsgInt.intCount; i++) {
+		printf("%08x ", filledMsgInt.msgInt[i]);
+	}
+
+	//消息扩展输出测试
+	for (int i = 0; i < groupAmount; i++) {
+		unsigned int* bi = 16 * i + filledMsgInt.msgInt;
+		ExtendMsgInt etdMsgInt = MsgExtend(bi);
+		printf("\n\n------- 消息扩展输出测试 第%d组-------\n", i + 1);
+		printf("\nW0---W67:\n");
+		for (int i = 0; i < 68; i++) {
+			printf("%08x ", etdMsgInt.W[i]);
+		}
+		printf("\n\nW1_0----W1_63:\n");
+		for (int i = 0; i < 64; i++) {
+			printf("%08x ", etdMsgInt.W1[i]);
+		}
+		printf("\n");
+	}
+
+}
+
+// 文档示例一
+void Eg1_test() {
+	int bigendFlag = NOT_BIG_ENDIAN();
+
+	unsigned char* chr = "abc";
+	//unsigned char* hashChr = SM3Hash_Old(chr, bigendFlag);
+	unsigned char hashChr[32];
+
+	SM3Hash(chr, bigendFlag, hashChr);
+
+	puts("-------------------- 文档示例1 --------------------\n\n");
+	//Fill_N_extend_test(chr);
+	puts("\n Eg1 hash value: ");
+	for (int i = 0; i < 32; i++) {
+		printf("%02x", hashChr[i]);
+		if (i != 0 && i % 4 == 0) {
+			printf(" ");
+		}
+	}
+	printf("\n");
+}
+
+// 文档示例二
+void Eg2_test() {
+	int bigendFlag = NOT_BIG_ENDIAN();
+	unsigned char* chr = "abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd";
+
+	//unsigned char* hashChr = SM3Hash_Old(chr, bigendFlag);
+	// 运算没问题，但是返回给指针之后到下面的puts调用时，会破坏hashChr指向的内存内容
+	unsigned char hashChr[32];
+
+	SM3Hash(chr, bigendFlag, hashChr);
+
+	puts("-------------------- 文档示例2 --------------------\n\n");
+	//Fill_N_extend_test(chr);
+	puts("\n Eg2 hash value: ");
+	for (int i = 0; i < 32; i++) {
+		printf("%02x", hashChr[i]);
+		if (i != 0 && i % 4 == 0) {
+			printf(" ");
+		}
+	}
+	printf("\n");
+}
+
+void otherTest()
+{
+	char s[20] = { 0x61,0x62,0x63,0x00,0x00,'s','e' };
+
+	printf("%d\n", strlen(s));
+	printf("%s\n", s);
+}
+
+void HmacPrint(unsigned char hmac32[])
+{
+	for (int i = 0; i < 32; i++) {
+		printf("%02x", hmac32[i]);
+		if (i != 0 && i % 4 == 0) {
+			printf(" ");
+		}
+	}
+	printf("\n");
+}
+
+void hmacTest()
+{
+	int bigendFlag = NOT_BIG_ENDIAN();
+	unsigned char sm3hmacValue[32];
+
+	char* str = "abcd";
+	/*unsigned int key[16] = {
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364,
+		0x61626364, 0x61626364, 0x61626364, 0x61626364
+	};*/
+
+	unsigned int key[16] = {
+		0x23242526, 0x61626364, 0x12131415, 0x41424364,
+		0x23242526, 0x61626364, 0x12131415, 0x41424364,
+		0x23242526, 0x61626364, 0x12131415, 0x41424364,
+		0x23242526, 0x61626364, 0x12131415, 0x41424364
+	};
+	SM3hmac(str, key, bigendFlag, sm3hmacValue);
+
+	HmacPrint(sm3hmacValue);
+
+}
+
+int main()
+{
+	//Eg1_test();
+	int bigendFlag = NOT_BIG_ENDIAN();
+	unsigned int keyInt16[16];
+	Key16Generate(keyInt16, bigendFlag);
+	unsigned char sm3hmacValue[32];
+	unsigned char* msg = "abcd";
+
+	SM3hmac(msg, keyInt16, bigendFlag, sm3hmacValue);
+
+	HmacPrint(sm3hmacValue);
+
+	//system("pause"); // Linux下注释掉此行
+
+	return 0;
+}

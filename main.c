@@ -1,9 +1,12 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<time.h>
 #include"SM3.h"
 
-#pragma warning(disable : 4996)// 用于微软VS标准
+#include<Windows.h> // Linux下注释掉此行
+
+#pragma warning(disable : 4996)// 用于微软VS标准 // Linux下注释掉此行
 
 // SM3所有操作已完成，以下为测试函数了
 // 填充和扩展的输出测试
@@ -86,10 +89,29 @@ void Eg2_test() {
 	printf("\n");
 }
 
-int main()
+void otherTest()
 {
-	//Eg1_test();
+	char s[20] = { 0x61,0x62,0x63,0x00,0x00,'s','e' };
+
+	printf("%d\n", strlen(s));
+	printf("%s\n", s);
+}
+
+void HmacPrint(unsigned char hmac32[])
+{
+	for (int i = 0; i < 32; i++) {
+		printf("%02x", hmac32[i]);
+		if (i != 0 && i % 4 == 0) {
+			printf(" ");
+		}
+	}
+	printf("\n");
+}
+
+void hmacTest()
+{
 	int bigendFlag = NOT_BIG_ENDIAN();
+	unsigned char sm3hmacValue[32];
 
 	char* str = "abcd";
 	/*unsigned int key[16] = {
@@ -105,12 +127,31 @@ int main()
 		0x23242526, 0x61626364, 0x12131415, 0x41424364,
 		0x23242526, 0x61626364, 0x12131415, 0x41424364
 	};
-	SM3hmac(str,key,bigendFlag);
+	SM3hmac(str, key, bigendFlag, sm3hmacValue);
 
-	char s[20] = { 0x61,0x62,0x63,0x00,0x00,'s','e' };
+	HmacPrint(sm3hmacValue);
+	
+}
 
-	printf("%d\n", strlen(s));
-	printf("%s\n", s);
+void keyNhamcTest()
+{
+	//Eg1_test();
+	int bigendFlag = NOT_BIG_ENDIAN();
+	unsigned int keyInt16[16];
+	Key16Generate(keyInt16, bigendFlag);
+	unsigned char sm3hmacValue[32];
+	unsigned char* msg = "abcd";
+
+	SM3hmac(msg, keyInt16, bigendFlag, sm3hmacValue);
+
+	HmacPrint(sm3hmacValue);
+}
+
+int main()
+{
+	
+
+	//system("pause"); // Linux下注释掉此行
 
 	return 0;
 }

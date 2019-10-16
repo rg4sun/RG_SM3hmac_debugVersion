@@ -15,10 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="SM3.c">
+      <Filter>头文件</Filter>
+    </ClCompile>
     <ClCompile Include="main.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="SM3.c">
+    <ClCompile Include="SM3hmac_ALLin1.c">
       <Filter>头文件</Filter>
     </ClCompile>
   </ItemGroup>
