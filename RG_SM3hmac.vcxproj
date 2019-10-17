@@ -145,7 +145,6 @@
   <ItemGroup>
     <ClCompile Include="main.c" />
     <ClCompile Include="SM3.c" />
-    <ClCompile Include="SM3hmac_ALLin1.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SM3.h" />

@@ -107,4 +107,6 @@ void SM3hmac(unsigned char msgText[], unsigned int key[], int notBigendian, unsi
 
 void Key16Generate(unsigned int keyInt16[], int notbigendian);
 
+void SM3hmacWithFile(char* filename, int fileChrAmount);
+
 void SM3Interface();

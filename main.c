@@ -97,16 +97,6 @@ void otherTest()
 	printf("%s\n", s);
 }
 
-void HmacPrint(unsigned char hmac32[])
-{
-	for (int i = 0; i < 32; i++) {
-		printf("%02x", hmac32[i]);
-		if (i != 0 && i % 4 == 0) {
-			printf(" ");
-		}
-	}
-	printf("\n");
-}
 
 void hmacTest()
 {
@@ -139,17 +129,51 @@ void keyNhamcTest()
 	int bigendFlag = NOT_BIG_ENDIAN();
 	unsigned int keyInt16[16];
 	Key16Generate(keyInt16, bigendFlag);
+	puts("密钥：");
+	for (int i = 0; i < 16; i++) {
+		printf("%08x ", keyInt16[i]);
+	}
+	printf("\n-------------------------------------------------\n");
 	unsigned char sm3hmacValue[32];
 	unsigned char* msg = "abcd";
-
+	clock_t start, end;
+	double excuteTime;
+	start = clock();
 	SM3hmac(msg, keyInt16, bigendFlag, sm3hmacValue);
+	end = clock();
 
+	excuteTime = ((double)end - (double)start) / CLOCKS_PER_SEC;
+	puts("hmac:");
 	HmacPrint(sm3hmacValue);
+	printf("完成SM3hmac所用时间: %f seconds.\n", excuteTime);
+}
+
+void fileReadTest()
+{
+	FILE* fp;
+	char* filename = "msg.txt";//"rawKeyFile.txt"; // /t 会被识别为转义字符
+	int fileChrAmount = 3072;
+	unsigned char* msg = (unsigned char*)malloc(fileChrAmount * sizeof(unsigned char));
+	fp = fopen(filename, "r");
+	if (fp == NULL) {
+		printf("Cannot open  %s\n", filename);
+		exit(0);
+	}
+	fgets(msg, fileChrAmount + 1, fp); // +1原因如下
+	//char *fgets(char *str,int n,FILE *fp)
+	//从由fp指出的文件中读取n-1个字符，并把它们存放到由str指出的字符数组中去，最后加上一个字符串结束符'\0'
+	printf("Your msg show as below:\n%s\n", msg);
+	printf("\n------------------------------------\nCharacter Amount: %d\n", strlen(msg));
+	fclose(fp);
 }
 
 int main()
 {
 	
+	char* filename = "msg.txt";
+	int fileChrAmount = 3145728;
+
+	SM3hmacWithFile(filename, fileChrAmount);
 
 	//system("pause"); // Linux下注释掉此行
 

@@ -1,4 +1,11 @@
+#pragma once
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<time.h>
 #include "SM3.h"
+
+#pragma warning(disable : 4996)// 用于微软VS标准 // Linux下注释掉此行
 
 // 初始向量
 const unsigned int IV[8] = {
@@ -201,7 +208,18 @@ void SM3hmac(unsigned char msgText[], unsigned int keyInt16[], int notBigendian,
 
 }
 
-void Key16Generate(unsigned int keyInt16[],int notbigendian)
+void HmacPrint(unsigned char hmac32[])
+{
+	for (int i = 0; i < 32; i++) {
+		printf("%02x", hmac32[i]);
+		if (i != 0 && i % 4 == 0) {
+			printf(" ");
+		}
+	}
+	printf("\n");
+}
+
+void Key16Generate(unsigned int keyInt16[], int notbigendian)
 {
 	//两次运行的结果相同，是因为未利用srand()设置随机数种子，所以rand()在调用时会自动设随机数种子为1
 	srand((unsigned int)time(0));
@@ -216,8 +234,52 @@ void Key16Generate(unsigned int keyInt16[],int notbigendian)
 		}
 	}
 	for (int i = 0; i < 16; i++) {
-		UCHAR_2_UINT(keyChr64, keyInt16[i], 4*i, notbigendian);
+		UCHAR_2_UINT(keyChr64, keyInt16[i], 4 * i, notbigendian);
 	}
+
+}
+
+void SM3hmacWithFile(char* filename, int fileChrAmount)
+{
+	FILE* fp;
+	//char* filename = "msg.txt";//"rawKeyFile.txt"; // /t 会被识别为转义字符
+	//int fileChrAmount = 3072;
+	int bigendFlag = NOT_BIG_ENDIAN();
+	unsigned char* msg = (unsigned char*)malloc((fileChrAmount + 1) * sizeof(unsigned char));
+	unsigned int keyInt16[16];
+	Key16Generate(keyInt16, bigendFlag);
+	puts("密钥：");
+	for (int i = 0; i < 16; i++) {
+		printf("%08x ", keyInt16[i]);
+	}
+	printf("\n-------------------------------------------------\n");
+	unsigned char sm3hmacValue[32];
+
+	clock_t start, end;
+	double excuteTime;
+	fp = fopen(filename, "r");
+	if (fp == NULL) {
+		printf("Cannot open  %s\n", filename);
+		exit(0);
+	}
+	start = clock();
+	fgets(msg, fileChrAmount + 1, fp); // +1原因如下
+	end = clock();
+	excuteTime = ((double)end - (double)start) / CLOCKS_PER_SEC;
+	printf("消息读取完成，共 %d 字节，用时: %f seconds.\n", fileChrAmount, excuteTime);
+	//char *fgets(char *str,int n,FILE *fp)
+	//从由fp指出的文件中读取n-1个字符，并把它们存放到由str指出的字符数组中去，最后加上一个字符串结束符'\0'
+	//printf("Your msg show as below:\n%s\n", msg);
+	//printf("\n------------------------------------\nCharacter Amount: %d\n", strlen(msg));
+	fclose(fp);
+
+	start = clock();
+	SM3hmac(msg, keyInt16, bigendFlag, sm3hmacValue);
+	end = clock();
+	excuteTime = ((double)end - (double)start) / CLOCKS_PER_SEC;
+
+	HmacPrint(sm3hmacValue);
+	printf("完成SM3hmac所用时间: % f seconds.\n", excuteTime);
 
 }
 
